@@ -9,7 +9,8 @@ from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
 from models import db, User, People
-
+from models import Planets, Favorites_people, Favorites_planets
+from sqlalchemy import func
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
@@ -51,7 +52,30 @@ def get_all_users():
         
         # Construye la respuesta
         response_body = {
-            "msg": "Hello, this is your GET /user response",
+            "results": result
+        }
+        
+        return jsonify(response_body), 200
+
+    except Exception as e:
+        # Maneja cualquier otro tipo de error
+        return jsonify({"msg": "An error occurred", "error": str(e)}), 500
+    
+@app.route('/users/favorites', methods=['GET'])
+def get_favorites_users():
+    try:
+        # Realiza la consulta a la base de datos
+        data = db.session.scalars(db.select(Favorites_people)).all()
+        
+        # Comprueba si hay resultados
+        if not data:
+            return jsonify({"msg": "No users found"}), 404
+        
+        # Serializa los resultados
+        result = list(map(lambda item: item.serialize(), data))
+        
+        # Construye la respuesta
+        response_body = {
             "results": result
         }
         
@@ -65,19 +89,107 @@ def get_all_users():
 
 @app.route('/people', methods=['GET'])
 def get_all_people():
-
-    data = db.session.scalars(db.select(People)).all()
-    result = list(map(lambda item: item.serialize(),data))
-    print(data)
-    print(result)
-
-    response_body = {
+    try:
+        # Realiza la consulta a la base de datos
+        data = db.session.scalars(db.select(People)).all()
         
-        "results": result
-    }
+        # Comprueba si hay resultados
+        if not data:
+            return jsonify({"msg": "No people found"}), 404
+        
+        # Serializa los resultados
+        result = list(map(lambda item: item.serialize(), data))
+        
+        # Construye la respuesta
+        response_body = {
+            "results": result
+        }
+        
+        return jsonify(response_body), 200
 
-    return jsonify(response_body), 200
+    except Exception as e:
+        # Maneja cualquier otro tipo de error
+        return jsonify({"msg": "An error occurred", "error": str(e)}), 500
+    
 
+    
+@app.route('/people/<int:id>', methods=['GET'])
+def get_one_person(id):
+    try:
+        # Obtiene la persona de la base de datos
+        person = db.session.execute(db.select(People).filter_by(id=id)).scalar_one()
+        
+        # Comprueba si hay resultados
+        if person is None:
+            return jsonify({"msg": "No person found"}), 404
+        
+        # Serializa el resultado
+        result = person.serialize()
+        
+        # Construye la respuesta
+        response_body = {
+            "result": result
+        }
+        
+        return jsonify(response_body), 200
+
+    except Exception as e:
+        # Maneja cualquier otro tipo de error
+        return jsonify({"msg": "An error occurred", "error": str(e)}), 500
+
+    
+
+@app.route('/planets', methods=['GET'])
+def get_all_planets():
+    try:
+     # Realiza la consulta a la base de datos
+        # data = db.session.scalars(db.select(Planets)).all()
+       
+        # data = db.session.scalars(db.select(func.count('*')).select_from(Planets)).all()
+        data = db.session.query(func.count(Planets.id)).scalar()
+
+        
+        # Comprueba si hay resultados
+        if not data:
+            return jsonify({"msg": "No planets found"}), 404
+        
+        # Serializa los resultados
+        result = list(map(lambda item: item.serialize(), data))
+        
+        # Construye la respuesta
+        response_body = {
+            "results": result
+        }
+        
+        return jsonify(response_body), 200
+
+    except Exception as e:
+        # Maneja cualquier otro tipo de error
+        return jsonify({"msg": "An error occurred", "error": str(e)}), 500
+    
+@app.route('/planets/<int:id>', methods=['GET'])
+def get_one_planet(id):
+    try:
+        # Obtiene la persona de la base de datos
+        planet = db.session.execute(db.select(Planets).filter_by(id=id)).scalar_one()
+        
+        # Comprueba si hay resultados
+        if planet is None:
+            return jsonify({"msg": "No planet found"}), 404
+        
+        # Serializa el resultado
+        result = planet.serialize()
+        
+        # Construye la respuesta
+        response_body = {
+            "result": result
+        }
+        
+        return jsonify(response_body), 200
+
+    except Exception as e:
+        # Maneja cualquier otro tipo de error
+        return jsonify({"msg": "An error occurred", "error": str(e)}), 500
 
 
 
